@@ -1,4 +1,5 @@
 import bonzai.api.*;
+
 import java.util.*;
 
 public class CompetitorAI implements AI {
@@ -6,6 +7,7 @@ public class CompetitorAI implements AI {
 	ArrayList<Hat> Hats;
 	ArrayList<Hat> RogueHats;
 	ArrayList<Wizard> EnemWiz;
+	Node goal;
 	
 	/**
 	 * You must have this function, all of the other functions in 
@@ -33,7 +35,6 @@ public class CompetitorAI implements AI {
 		EnemWiz = state.getEnemyWizards();
 		int[] teams = new int[numPlayers - 1];
 		int index = 0;
-		Node goal;
 		int pLength = 10000;
 		for (int i = 1; i <= numPlayers; i++) {
 			if (i != teamNumber) {
@@ -93,14 +94,29 @@ public class CompetitorAI implements AI {
 	 */
 	private void moveBlockers(AIGameState state) {
 		for(Blocker blocker : state.getMyBlockers()) {
-			if (Hats.size() < 2) {
-				blocker.unBlock();
-			} else if (blocker.getLocation().getActors().contains(EnemWiz)) {
-				blocker.block();
-			} else {
-				blocker.block();
+			for( Hat mHat : Hats ) {
+				if (Hats.size() < 2 || blocker.isAdjacent(mHat) || 
+						blocker.isAdjacent(state.getMyWizard()) || 
+						blocker.getLocation() == state.getMyWizard().getLocation()) {
+					blocker.unBlock();
+				} else if (blocker.getLocation().getActors().contains(EnemWiz)) {
+					blocker.block();
+				} else {
+					blocker.block();
+				}
 			}
-			blocker.move((int)(Math.random()*4));
+			if( !EnemWiz.isEmpty() ) {
+				for( Wizard lWiz : EnemWiz ) {
+					moveActor(blocker, lWiz.getLocation());
+				}
+			} else {
+				goal = state.getMyBase();
+				if(Math.random() < .9) {
+					blocker.move((int)(Math.random()*4));
+				} else {
+					moveActor(blocker, state.getMyBase());
+				}
+			}
 		}
 	}
 	
@@ -114,7 +130,7 @@ public class CompetitorAI implements AI {
 			
 			//Move your cleaner one step closer to the node (1, 1)
 			if(!cleaner.move(moveDirection)) {
-				cleaner.shout("I amteam unable to move in that direction!");
+				cleaner.shout("I am unable to move in that direction!");
 			} else {
 				if(!cleaner.canMove(moveDirection)) {
 					//There is a blocking blocker in the direction of 'moveDirection'
