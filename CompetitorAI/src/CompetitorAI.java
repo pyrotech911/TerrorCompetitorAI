@@ -13,10 +13,6 @@ public class CompetitorAI implements AI {
 	 */
 	@Override
 	public void takeTurn(AIGameState state) {
-		ArrayList<Hat> Hats = state.getMyHats();
-		ArrayList<Hat> RogueHats = state.getRogueHats();
-		ArrayList<Wizard> EnemWiz = state.getEnemyWizards();
-		
 		this.moveWizard(state);
 		this.moveBlockers(state);
 		this.moveCleaners(state);
@@ -68,6 +64,8 @@ public class CompetitorAI implements AI {
 				}
 				pLength = 10000;
 			}
+		} else {
+			wizard.move((int)(Math.random()*4));
 		}
 	
 		//Wizard Pathfinding
@@ -138,9 +136,9 @@ public class CompetitorAI implements AI {
 	 */
 	private void moveScouts(AIGameState state) {
 		for(Scout scout : state.getMyScouts()) {
-			if(Math.random() > .8) { //80% chance to move randomly
+			if(Math.random() > .8) {
 				scout.doubleMove((int)(Math.random()*4), (int)(Math.random()*4));
-			} else { //20% chance to move closer to your base.
+			} else {
 				scout.doubleMove(state.getPath(scout, state.getMyBase(), pathWeight));
 			}
 		}
