@@ -241,16 +241,18 @@ public class CompetitorAI implements AI {
 			int[] goalList;
 			if(!scoutGoals.containsKey(scout.getID())){
 				needGoal = true;
-				int [] gli = {0, 0, 0};
+				int [] gli = {0, 0, 0, 0};
 				scoutGoals.put(scout.getID(), gli);
 				scoutHats.put(scout.getID(), 0);
 				goalList = gli;
 			}
 			else{
 				goalList = scoutGoals.get(scout.getID());
-				needGoal = (goalList[2] == 0 || goalList[2] == -1 || 
-						   (goalList[0] == scout.getLocation().getX() 
-						   && goalList[1] == scout.getLocation().getY()));
+				if (goalList[3] > 100 && (goalList[0] == scout.getLocation().getX() && goalList[1] == scout.getLocation().getY())){
+					needGoal = true;
+					goalList[3] = 0;
+					scoutHats.put(scout.getID(), 0);
+				}
 			}
 			if(needGoal){
 				if(!RogueHats.isEmpty()){
@@ -266,8 +268,8 @@ public class CompetitorAI implements AI {
 						}
 					}
 				}
-				else if(!state.getNeutralHats().isEmpty()){
-					for( Hat nhat : state.getNeutralHats()){
+				else if(!NeutHats.isEmpty()){
+					for( Hat nhat : NeutHats){
 						if(!scoutHats.containsValue(nhat.getID()) || scoutHats.get(scout.getID()) == nhat.getID()){
 							goalList[2] = -1;
 							scoutGoals.put(scout.getID(), goalList);
@@ -303,6 +305,8 @@ public class CompetitorAI implements AI {
 			
 			Node d = state.getNode(goalList[0], goalList[1]);
 			moveActor(scout, d, trcWeight);
+			scout.shout("Going to: "+goalList[0]+", "+goalList[1]);
+			goalList[3]++;
 		}
 	}
 	
