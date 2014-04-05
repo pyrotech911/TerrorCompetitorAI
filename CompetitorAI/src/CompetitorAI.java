@@ -7,7 +7,15 @@ public class CompetitorAI implements AI {
 	ArrayList<Hat> Hats;
 	ArrayList<Hat> RogueHats;
 	ArrayList<Wizard> EnemWiz;
+<<<<<<< Updated upstream
 	Node goal;
+=======
+	ArrayList<Hat> NeutHats;
+	int RandCount = 0;
+	int RandWizX = 0;
+	int RandWizY = 0;
+	Node RandNode;
+>>>>>>> Stashed changes
 	
 	/**
 	 * You must have this function, all of the other functions in 
@@ -15,6 +23,7 @@ public class CompetitorAI implements AI {
 	 */
 	@Override
 	public void takeTurn(AIGameState state) {
+				
 		this.moveWizard(state);
 		this.moveBlockers(state);
 		this.moveCleaners(state);
@@ -33,14 +42,30 @@ public class CompetitorAI implements AI {
 		Hats = state.getMyHats();
 		RogueHats = state.getRogueHats();
 		EnemWiz = state.getEnemyWizards();
+		NeutHats = state.getNeutralHats();
+		int BaseHats = 0;
 		int[] teams = new int[numPlayers - 1];
 		int index = 0;
 		int pLength = 10000;
+		
+		if( RandCount % 5 == 0 ) {
+			RandWizX = (int)(Math.random() % state.getWidth());
+			RandWizY = (int)(Math.random() % state.getHeight());
+		}
+		
+		RandCount++;
+
+		
 		for (int i = 1; i <= numPlayers; i++) {
 			if (i != teamNumber) {
 				teams[index] = i;
 				index++;
 			}
+		}
+		
+		
+		for( Hat lHat : Hats ) {
+			if( lHat.getLocation().isBase() ) BaseHats++;
 		}
 		
 		goal = wizard.getLocation();
@@ -54,8 +79,17 @@ public class CompetitorAI implements AI {
 				}
 				pLength = 10000;
 			}
-		} else if( Hats.size() < 2 ) {
+		} else if( BaseHats < 2 ) {
 			goal = state.getBase(teams[ (int)(Math.random() % (numPlayers -1) ) ]);
+		} else if( !NeutHats.isEmpty() ) {
+			for( Hat lHat : NeutHats ) {
+				ArrayList<Node> lPath = state.getPath(wizard, lHat.getLocation(), pathWeight );
+				if( lPath.size() < pLength ) {
+					pLength = lPath.size();
+					goal = lHat.getLocation();
+				}
+				pLength = 10000;
+			}
 		} else if( !EnemWiz.isEmpty() ) {
 			for( Wizard lWiz : EnemWiz ) {
 				ArrayList<Node> lPath = state.getPath(wizard, lWiz.getLocation(), pathWeight );
@@ -63,10 +97,14 @@ public class CompetitorAI implements AI {
 					pLength = lPath.size();
 					goal = lWiz.getLocation();
 				}
+				
+				if( pLength > 2 ) {
+					goal = state.getNode( RandWizX, RandWizY );
+				}
 				pLength = 10000;
 			}
 		} else {
-			wizard.move((int)(Math.random()*4));
+			goal = state.getNode( RandWizX, RandWizY );
 		}
 	
 		//Wizard Pathfinding
