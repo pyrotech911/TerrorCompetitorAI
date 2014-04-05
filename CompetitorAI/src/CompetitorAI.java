@@ -7,15 +7,17 @@ public class CompetitorAI implements AI {
 	ArrayList<Hat> Hats;
 	ArrayList<Hat> RogueHats;
 	ArrayList<Wizard> EnemWiz;
-<<<<<<< Updated upstream
+
 	Node goal;
-=======
+
 	ArrayList<Hat> NeutHats;
 	int RandCount = 0;
 	int RandWizX = 0;
 	int RandWizY = 0;
 	Node RandNode;
->>>>>>> Stashed changes
+
+	HashMap<Integer, int[]> scoutGoals = new HashMap<Integer, int[]>();
+	HashMap<Integer, Integer> scoutHats = new HashMap<Integer, Integer>();
 	
 	/**
 	 * You must have this function, all of the other functions in 
@@ -190,11 +192,72 @@ public class CompetitorAI implements AI {
 	 */
 	private void moveScouts(AIGameState state) {
 		for(Scout scout : state.getMyScouts()) {
-			if(Math.random() > .8) {
-				scout.doubleMove((int)(Math.random()*4), (int)(Math.random()*4));
-			} else {
-				scout.doubleMove(state.getPath(scout, state.getMyBase(), pathWeight));
+			boolean needGoal = true;
+			int[] goalList;
+			if(!scoutGoals.containsKey(scout.getID())){
+				needGoal = true;
+				int [] gli = {0, 0, 0};
+				scoutGoals.put(scout.getID(), gli);
+				scoutHats.put(scout.getID(), 0);
+				goalList = gli;
 			}
+			else{
+				goalList = scoutGoals.get(scout.getID());
+				needGoal = (goalList[2] == 0 || goalList[2] == -1 || 
+						   (goalList[0] == scout.getLocation().getX() 
+						   && goalList[1] == scout.getLocation().getY()));
+			}
+			if(needGoal){
+				if(!RogueHats.isEmpty()){
+					for( Hat rhat : RogueHats){
+						if(!scoutHats.containsValue(rhat.getID()) || scoutHats.get(scout.getID()) == rhat.getID()){
+							goalList[2] = -1;
+							scoutGoals.put(scout.getID(), goalList);
+							scoutHats.put(scout.getID(), rhat.getID());
+							goalList[1] = rhat.getLocation().getY();
+							goalList[0] = rhat.getLocation().getX();
+							needGoal = false;
+							break;
+						}
+					}
+				}
+				else if(!state.getNeutralHats().isEmpty()){
+					for( Hat nhat : state.getNeutralHats()){
+						if(!scoutHats.containsValue(nhat.getID()) || scoutHats.get(scout.getID()) == nhat.getID()){
+							goalList[2] = -1;
+							scoutGoals.put(scout.getID(), goalList);
+							scoutHats.put(scout.getID(), nhat.getID());
+							goalList[1] = nhat.getLocation().getY();
+							goalList[0] = nhat.getLocation().getX();
+							needGoal = false;
+							break;
+						}
+					}
+				}
+				else if(!state.getEnemyHats().isEmpty()){
+					for( Hat ehat : state.getEnemyHats()){
+						if(!scoutHats.containsValue(ehat.getID()) || scoutHats.get(scout.getID()) == ehat.getID()){
+							goalList[2] = -1;
+							scoutGoals.put(scout.getID(), goalList);
+							scoutHats.put(scout.getID(), ehat.getID());
+							goalList[1] = ehat.getLocation().getY();
+							goalList[0] = ehat.getLocation().getX();
+							needGoal = false;
+							break;
+						}
+					}
+				}
+				else{
+					goalList[2] = 1;
+					goalList[1] = ((int)(Math.random()*1000))%state.getHeight();
+					goalList[0] = ((int)(Math.random()*1000))%state.getWidth();
+					scoutGoals.put(scout.getID(), goalList);
+					scoutHats.put(scout.getID(), 0);
+				}
+			}
+			
+			Node d = state.getNode(goalList[0], goalList[1]);
+			moveActor(scout, d);
 		}
 	}
 	
