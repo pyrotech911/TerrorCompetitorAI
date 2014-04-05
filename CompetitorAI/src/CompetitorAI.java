@@ -3,11 +3,11 @@ import bonzai.api.*;
 import java.util.*;
 
 public class CompetitorAI implements AI {
-	private WeightComparator wizWeight = new CompetitorWeightComparator();
-	private WeightComparator blkWeight = new CompetitorWeightComparator();
-	private WeightComparator clnWeight = new CompetitorWeightComparator();
-	private WeightComparator trcWeight = new CompetitorWeightComparator();
-	private WeightComparator hatWeight = new CompetitorWeightComparator();
+	private WeightComparator wizWeight = new CompetitorWeightComparator(0);
+	private WeightComparator blkWeight = new CompetitorWeightComparator(1);
+	private WeightComparator clnWeight = new CompetitorWeightComparator(2);
+	private WeightComparator trcWeight = new CompetitorWeightComparator(3));
+	private WeightComparator hatWeight = new CompetitorWeightComparator(4);
 	ArrayList<Hat> Hats;
 	ArrayList<Hat> RogueHats;
 	ArrayList<Wizard> EnemWiz;
