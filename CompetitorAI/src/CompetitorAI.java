@@ -30,11 +30,10 @@ public class CompetitorAI implements AI {
 	 */
 	@Override
 	public void takeTurn(AIGameState state) {
-				
+		this.moveScouts(state);
 		this.moveWizard(state);
 		this.moveBlockers(state);
 		this.moveCleaners(state);
-		this.moveScouts(state);
 		this.moveHats(state);
 	}
 	
@@ -248,15 +247,15 @@ public class CompetitorAI implements AI {
 			}
 			else{
 				goalList = scoutGoals.get(scout.getID());
-				if (goalList[3] > 100 && (goalList[0] == scout.getLocation().getX() && goalList[1] == scout.getLocation().getY())){
+				if (goalList[3] > 10000 && (goalList[0] == scout.getLocation().getX() && goalList[1] == scout.getLocation().getY())){
 					needGoal = true;
 					goalList[3] = 0;
 					scoutHats.put(scout.getID(), 0);
 				}
 			}
 			if(needGoal){
-				if(!RogueHats.isEmpty()){
-					for( Hat rhat : RogueHats){
+				if(!state.getRogueHats().isEmpty()){
+					for( Hat rhat : state.getRogueHats()){
 						if(!scoutHats.containsValue(rhat.getID()) || scoutHats.get(scout.getID()) == rhat.getID()){
 							goalList[2] = -1;
 							scoutGoals.put(scout.getID(), goalList);
@@ -268,8 +267,8 @@ public class CompetitorAI implements AI {
 						}
 					}
 				}
-				else if(!NeutHats.isEmpty()){
-					for( Hat nhat : NeutHats){
+				else if(!state.getNeutralHats().isEmpty()){
+					for( Hat nhat : state.getNeutralHats()){
 						if(!scoutHats.containsValue(nhat.getID()) || scoutHats.get(scout.getID()) == nhat.getID()){
 							goalList[2] = -1;
 							scoutGoals.put(scout.getID(), goalList);
@@ -304,6 +303,7 @@ public class CompetitorAI implements AI {
 			}
 			
 			Node d = state.getNode(goalList[0], goalList[1]);
+			moveActor(scout, d, trcWeight);
 			moveActor(scout, d, trcWeight);
 			scout.shout("Going to: "+goalList[0]+", "+goalList[1]);
 			goalList[3]++;
