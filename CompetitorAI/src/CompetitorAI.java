@@ -3,7 +3,11 @@ import bonzai.api.*;
 import java.util.*;
 
 public class CompetitorAI implements AI {
-	private WeightComparator pathWeight = new CompetitorWeightComparator();
+	private WeightComparator wizWeight = new CompetitorWeightComparator();
+	private WeightComparator blkWeight = new CompetitorWeightComparator();
+	private WeightComparator clnWeight = new CompetitorWeightComparator();
+	private WeightComparator trcWeight = new CompetitorWeightComparator();
+	private WeightComparator hatWeight = new CompetitorWeightComparator();
 	ArrayList<Hat> Hats;
 	ArrayList<Hat> RogueHats;
 	ArrayList<Wizard> EnemWiz;
@@ -18,6 +22,7 @@ public class CompetitorAI implements AI {
 
 	HashMap<Integer, int[]> scoutGoals = new HashMap<Integer, int[]>();
 	HashMap<Integer, Integer> scoutHats = new HashMap<Integer, Integer>();
+
 	
 	/**
 	 * You must have this function, all of the other functions in 
@@ -46,13 +51,18 @@ public class CompetitorAI implements AI {
 		EnemWiz = state.getEnemyWizards();
 		NeutHats = state.getNeutralHats();
 		int BaseHats = 0;
+		ArrayList<Node> lPath;
 		int[] teams = new int[numPlayers - 1];
 		int index = 0;
 		int pLength = 10000;
+		int bail = 0;
 		
-		if( RandCount % 5 == 0 ) {
-			RandWizX = (int)(Math.random() % state.getWidth());
-			RandWizY = (int)(Math.random() % state.getHeight());
+		if( RandCount % 10 == 0  || wizard.getLocation().equals(state.getNode( RandWizX, RandWizY ))) {
+			RandWizX = (int)((Math.random() * 1000 ) % state.getWidth());
+			wizard.shout( "X" + RandWizX );
+			RandWizY = (int)((Math.random() * 1000 ) % state.getHeight());
+			wizard.shout( "Y:" + RandWizY );
+
 		}
 		
 		RandCount++;
@@ -70,47 +80,82 @@ public class CompetitorAI implements AI {
 			if( lHat.getLocation().isBase() ) BaseHats++;
 		}
 		
-		goal = wizard.getLocation();
+		goal = state.getBase(teams[ (int)((Math.random() * 100) % (numPlayers -1) ) ]);
 		
 		if( !RogueHats.isEmpty() ) {
+			wizard.shout( "rogues" );
 			for( Hat lHat : RogueHats ) {
-				ArrayList<Node> lPath = state.getPath(wizard, lHat.getLocation(), pathWeight );
+				lPath = state.getPath(wizard, lHat.getLocation(), wizWeight );
 				if( lPath.size() < pLength ) {
 					pLength = lPath.size();
 					goal = lHat.getLocation();
 				}
-				pLength = 10000;
+				bail++;
+				if( bail > 1 ) {
+					bail = 0;
+					break;
+				}
 			}
-		} else if( BaseHats < 2 ) {
-			goal = state.getBase(teams[ (int)(Math.random() % (numPlayers -1) ) ]);
+			pLength = 10000;
+		} else if( !NeutHats.isEmpty() ) {
+			wizard.shout( "neutrals");
+			for( Hat lHat : NeutHats ) {
+				lPath = state.getPath(wizard, lHat.getLocation(), wizWeight );
+				if( lPath.size() < pLength ) {
+					pLength = lPath.size();
+					goal = lHat.getLocation();
+				}
+				bail++;
+				if( bail > 1 ) {
+					bail = 0;
+					break;
+				}
+			}
+			pLength = 10000;
+		} else if(  BaseHats <= Hats.size() && BaseHats < 2 ) {
+			wizard.shout( "BASE" );
+			goal = state.getBase(teams[ (int)((Math.random() * 100) % (numPlayers -1) ) ]);
 		} else if( !NeutHats.isEmpty() ) {
 			for( Hat lHat : NeutHats ) {
-				ArrayList<Node> lPath = state.getPath(wizard, lHat.getLocation(), pathWeight );
+				lPath = state.getPath(wizard, lHat.getLocation(), wizWeight );
 				if( lPath.size() < pLength ) {
 					pLength = lPath.size();
 					goal = lHat.getLocation();
 				}
-				pLength = 10000;
+				bail++;
+				if( bail > 1 ) {
+					bail = 0;
+					break;
+				}
 			}
+			pLength = 10000;
 		} else if( !EnemWiz.isEmpty() ) {
+			wizard.shout( "ENEMY WIZARD" );
 			for( Wizard lWiz : EnemWiz ) {
-				ArrayList<Node> lPath = state.getPath(wizard, lWiz.getLocation(), pathWeight );
+				lPath = state.getPath(wizard, lWiz.getLocation(), wizWeight );
 				if( lPath.size() < pLength ) {
 					pLength = lPath.size();
 					goal = lWiz.getLocation();
 				}
 				
-				if( pLength > 2 ) {
+				if( pLength > 2 || lWiz.getLocation().equals( wizard.getLocation() )) {
 					goal = state.getNode( RandWizX, RandWizY );
 				}
-				pLength = 10000;
+				
+				bail++;
+				if( bail > 1 ) {
+					bail = 0;
+					break;
+				}
 			}
+			pLength = 10000;
 		} else {
+			wizard.shout( "RANDOM");
 			goal = state.getNode( RandWizX, RandWizY );
 		}
 	
 		//Wizard Pathfinding
-		moveActor(wizard, goal);
+		moveActor(wizard, goal, wizWeight );
 		
 		//Iterate through all visible enemy actors
 		for(Actor e : state.getEnemyActors()) {
@@ -147,14 +192,14 @@ public class CompetitorAI implements AI {
 			}
 			if( !EnemWiz.isEmpty() ) {
 				for( Wizard lWiz : EnemWiz ) {
-					moveActor(blocker, lWiz.getLocation());
+					moveActor(blocker, lWiz.getLocation(), blkWeight );
 				}
 			} else {
 				goal = state.getMyBase();
 				if(Math.random() < .9) {
 					blocker.move((int)(Math.random()*4));
 				} else {
-					moveActor(blocker, state.getMyBase());
+					moveActor(blocker, state.getMyBase(), blkWeight);
 				}
 			}
 		}
@@ -166,7 +211,7 @@ public class CompetitorAI implements AI {
 	 */
 	private void moveCleaners(AIGameState state) {
 		for(Cleaner cleaner : state.getMyCleaners()) {
-			int moveDirection = cleaner.getDirection(state.getNode(2, 2), pathWeight);
+			int moveDirection = cleaner.getDirection(state.getNode(2, 2), clnWeight);
 			
 			//Move your cleaner one step closer to the node (1, 1)
 			if(!cleaner.move(moveDirection)) {
@@ -257,7 +302,7 @@ public class CompetitorAI implements AI {
 			}
 			
 			Node d = state.getNode(goalList[0], goalList[1]);
-			moveActor(scout, d);
+			moveActor(scout, d, trcWeight);
 		}
 	}
 	
@@ -267,17 +312,16 @@ public class CompetitorAI implements AI {
 	 */
 	private void moveHats(AIGameState state) {
 		for(Hat hat : state.getMyHats()) {
-			moveActor(hat, state.getMyBase());
+			moveActor(hat, state.getMyBase(), hatWeight);
 		}
 	}
 	
-	private void moveActor(Actor a, Node goal) {
-		int moveDirection = a.getDirection( goal, pathWeight);
+	private void moveActor(Actor a, Node goal, WeightComparator comp) {
+		
+		int moveDirection = a.getDirection( goal, comp);
 		if(moveDirection != -1) { 
-			a.shout("Trying to move");
 			if(a.canMove(moveDirection)) {
 				a.move(moveDirection);
-				a.shout("Moving");
 			}
 		}
 	}
