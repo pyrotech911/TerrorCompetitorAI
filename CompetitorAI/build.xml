@@ -1,0 +1,62 @@
+<project name = "CompetitorAI" default = "build">
+	<import file = "common.xml"/>
+	
+	<property name = "ai" value = "CompetitorAI" />
+	<property name = "team" value = "Recursive Terror" />
+
+	<!-- Clean Target(s) -->
+	<target name = "clean">
+		<delete dir = "${bin}" />
+		<delete file = "ais/${ai}.jar" />
+	</target>
+	
+	<target name = "clean-force" depends = "clean">
+		<delete verbose = "true"><fileset dir = "ais" includes = "**/*.jar"/></delete>
+	</target>
+
+	<!-- Stage Target(s) -->
+	<target name = "stage" depends = "clean">
+		<mkdir dir = "${bin}" />
+		<copy file = "icon.png" todir = "${bin}" failonerror = "false" />
+	</target>
+
+	<!-- Compile Target(s) -->
+	<target name = "compile" depends = "stage">
+		<compile files = "**">
+			<includes><pathelement location="bonzai-api.jar"/></includes>
+		</compile>
+	</target>
+
+	<!-- Build Target(s) -->
+	<target name = "build" depends = "compile">
+		<build jar = "${ai}.jar" dest = "ais">
+			<attributes>
+				<attribute name = "AI" value = "${ai}" />
+   	            <attribute name = "Team" value = "${team}" />
+			</attributes>
+		</build>
+	</target>
+	
+	<!-- Run Target(s) -->
+	<target name = "run" depends = "build">
+		<run-jar class = "bonzai.BonzAI2014" jar = "bonzai.jar" />
+	</target>
+	
+	<!-- Build Target(s) -->
+	<target name = "build-DoNothingAI">
+		<delete dir = "${bin}" />
+		<delete file = "ais/DoNothingAI.jar" />
+		<mkdir dir = "${bin}" />
+		<copy file = "icon.png" todir = "${bin}" failonerror = "false" />
+		<compile files = "**">
+			<includes><pathelement location="bonzai-api.jar"/></includes>
+		</compile>
+		
+		<build jar = "DoNothingAI.jar" dest = "ais">
+			<attributes>
+				<attribute name = "AI" value = "DoNothingAI" />
+   	            <attribute name = "Team" value = "Team NULL" />
+			</attributes>
+		</build>
+	</target>
+</project>

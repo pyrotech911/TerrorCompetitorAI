@@ -1,0 +1,82 @@
+<project name = "common">
+	<property name = "src" value = "src" />
+	<property name = "jar" value = "jar" />
+	<property name = "bin" value = "bin" />
+	<property name = "dev" value = "dev" />
+
+	<path id = "jar.classpath"><pathelement path = "${jar}" /></path>
+	<path id = "bin.classpath"><pathelement path = "${bin}" /></path>
+
+	<!-- Macro: compile, compile specified java source files -->
+	<macrodef name = "compile">
+		<attribute name = "files" />
+		<element name = "includes" optional = "true" />
+		<sequential>
+			<javac includeantruntime = "false"
+				sourcepath  = ""
+				srcdir      = "${src}"
+				destdir     = "${bin}"
+				includes    = "@{files}"
+				deprecation = "on"
+				debug       = "true"
+				debuglevel  = "lines,vars,source"
+				listfiles   = "no"
+			>
+				<!-- show all warnings -->
+				<compilerarg value = "-Xlint"/>
+				<!-- serialization warnings are irrelevant to our application: -->
+				<compilerarg value = "-Xlint:-serial"/>
+				<!-- compile against external jars/libs -->
+				<classpath><includes /></classpath>
+			</javac>
+		</sequential>
+	</macrodef>
+
+	<!-- Macro: build, jar together specified java class files -->
+	<macrodef name = "build">
+		<attribute name = "jar" />
+		<attribute name = "dest" />
+		<element name = "attributes" optional = "true" />
+		<sequential>
+			<jar destfile = "@{dest}/@{jar}">
+				<fileset dir = "${bin}/" includes="**" />
+    			<fileset dir = "${src}/" includes="**" />
+    			<manifest><attributes /></manifest>
+			</jar>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name = "build-package">
+		<attribute name = "jar"  />
+		<attribute name = "dest" />
+		<attribute name = "base" />
+		<element name = "attributes" optional = "true" />
+		<sequential>
+			<jar destfile = "@{dest}/@{jar}">
+				<fileset dir = "${bin}/" includes="@{base}/**" />
+    			<fileset dir = "${src}/" includes="@{base}/**" />
+				<manifest><attributes /></manifest>
+			</jar>
+		</sequential>
+	</macrodef>
+
+	<!-- Macro: run, run the specified class -->
+	<macrodef name = "run">
+		<attribute name = "class"/>
+		<sequential>
+			<java classname = "@{class}" fork = "true">
+				<classpath path = "${bin}" />
+			</java>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name = "run-jar">
+		<attribute name = "class" />
+		<attribute name = "jar"   />
+		<sequential>
+			<java classname = "@{class}" fork = "true">
+				<classpath path = "@{jar}" />
+			</java>
+		</sequential>
+	</macrodef>
+</project>
